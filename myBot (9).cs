@@ -32,35 +32,40 @@ namespace MyBot
                         // Get the first island
                         Island destination = game.GetAllIslands()[3];
                         // Get sail options
-                        if (!IsMyIsland(destination, game))
-                        {
-                            List<Location> sailOptions = game.GetSailOptions(pirate, destination);
-                            // Set sail!
-                            game.SetSail(pirate, sailOptions[0]);
-                            // Print a message
-                            game.Debug("pirate " + pirate + " sails to " + sailOptions[0]);
-                        }
-                        else
-                        {
-                            if (i == 0)
-                            {
-                                if (pirate.GetLocation().Distance(new Location(24, 19)) != 0)
-                                {
-                                    Location destination1 = new Location(24, 19);
-                                    List<Location> sailOptions1 = game.GetSailOptions(pirate, destination1);
-                                    game.SetSail(pirate, sailOptions1[0]);
-                                }
-                            }
-                            else
-                            {
-                                if (pirate.GetLocation().Distance(new Location(24, 26)) != 0)
-                                {
-                                    Location destination1 = new Location(24, 26);
-                                    List<Location> sailOptions1 = game.GetSailOptions(pirate, destination1);
-                                    game.SetSail(pirate, sailOptions1[0]);
-                                }
-                            }
-                        }
+
+                    }
+                }
+            }
+        }
+        private void SailToDestination(Location destination, Pirate pirate, PirateGame game) // Maybe Later We Will Change Island To MapObject
+        {
+            List<Location> sailOptions = game.GetSailOptions(pirate, destination);
+            // Set sail!
+            game.SetSail(pirate, sailOptions[0]);
+            // Print a message
+            game.Debug("pirate " + pirate + " sails to " + sailOptions[0]);
+        }
+
+        private void Strategy1(Island destination, Pirate pirate, PirateGame game, int i)
+        {
+            if (!IsMyIsland(destination, game)) // Check If The Island That We Want To Go Is Not Ours
+            {
+                SailToDestination(destination.Location, pirate);
+            }
+            else
+            {
+                if (pirate.GetLocation().Distance(new Location(24, 19)) != 0)
+                {
+                    Location destination1 = new Location(24, 19);
+                    SailToDestination(destination1, pirate, game);
+                }
+
+                else
+                {
+                    if (pirate.GetLocation().Distance(new Location(24, 26)) != 0)
+                    {
+                        Location destination2 = new Location(24, 26);
+                        SailToDestination(destination2, pirate, game);
                     }
                 }
             }
