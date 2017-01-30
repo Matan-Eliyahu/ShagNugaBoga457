@@ -25,30 +25,31 @@ namespace MyBot
 
             Pirate ListPirate = game.GetAllMyPirates();
             int HowManyPirates = ListPirate.Count - 1;
-            int sumAlreadeSend = -1;
+            int piratesAlreadeSend = 0;// 0
             const int numStrategy = 3;//number of strategy consot
-            int numFromToSend = 0;//it will consist- untill which part of the list of pirate to sent  
-            //we will be send from sumAlreadeSend to numFromToSend for each strategy
+            int piratestosend = 0;//it will consist- untill which part of the list of pirate to sent  
+            //we will be send from piratespiratesAlreadeSend to piratestosend for each strategy
             for (int i = 1; i <= numStrategy; i++)
             {
-                sumAlreadeSend = sumAlreadeSend + numFromToSend + 1;
-                numFromToSend = numFromToSend + UpdateNum(i, HowManyPirates, sumAlreadeSend);
-                SendToStrategy(i, ListPirate, sumAlreadeSend, numFromToSend);
+                piratesAlreadeSend = piratestosend ;
+                piratestosend = piratestosend + UpdateNum(i, HowManyPirates, piratesAlreadeSend);
+                SendToStrategy(i, ListPirate, piratesAlreadeSend, piratestosend);
             }
-            CheckLeftAndSend(numFromToSend, HowManyPirates, ListPirate);
+            CheckLeftAndSend(piratestosend, HowManyPirates, ListPirate);
         }
-        private int UpdateNum(int numStrategy, int HowManyPirates, int sumAlreadeSend)
+        private int UpdateNum(int numStrategy, int HowManyPirates, int sumpiratesAlreadeSend)
         {
             int precent = WhatPrecent(numStrategy);
-            int numToSend = Math.Round(HowManyPirates * precent);
-
+            return Math.Round(HowManyPirates * precent);
         }
+
         private void CheckLeftAndSend(int numSent, int HowManyPirates, List<Pirate> ListPirate)
         {
-            numStrategyToSend = 3;
+            numStrategyToSend = 3;//example
             if (numSent < HowManyPirates)
                 SendToStrategy(numStrategyToSend, ListPirate, numSent, HowManyPirates);
         }
+
         private double WhatPrecent(int numStrategy)
         {
 
@@ -61,14 +62,13 @@ namespace MyBot
         }
         private void SendToStrategy(int numStrategyToSend, List<Pirate> ListPirate,int from,int untill)
             {
+
             if (numStrategyToSend == 1)
                 Strategy1(ListPirate,  from,  untill);//first strategy
             else if (numStrategyToSend == 2)
                 Strategy2(ListPirate,  from,  untill);//secend strategy
             else
                 Strategy3(ListPirate,  from, untill);//third strategy
-            
-
         }
 //____________________________________________________________________________________________________________
 //_________________________________________________________________________________________________________________
@@ -82,11 +82,11 @@ namespace MyBot
             game.Debug("pirate " + pirate + " sails to " + sailOptions[0]);
         }
 
-        private void Strategy1(List<Pirate> ListPirate, int from, int untill)
+    private void Strategy1(List<Pirate> ListPirate, int from, int untill)
     {//this fanc need to decide which destination
         Island destination = game.GetAllIslands()[3];
 
-        for (int i = from; i <= untill; i++)
+        for (int i = from; i < untill; i++)
         {
             Pirate pirate = ListPirate[i];
             if (!IsMyIsland(destination, game)) // Check If The Island That We Want To Go Is Not Ours
@@ -111,9 +111,7 @@ namespace MyBot
                 }
             }
         }
-        }
-
-
+    }
         private void HandlePirates2_3(PirateGame game)
         {
             // Go over all of my pirates
