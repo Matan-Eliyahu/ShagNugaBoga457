@@ -13,46 +13,45 @@ namespace MyBot
             HandlePirates0_1(game);
             HandlePirates2_3(game);
             HandlePirates4(game);
-            // Give orders to my pirates
-            // Give orders to my drones
             HandleDrones(game);
-            //
         }
 
-        private void HandlePirates0_1(PirateGame game)
+        private void HandlePirates0_1 (PirateGame game)
         {
-            // Go over all of my pirates
-
             Pirate ListPirate = game.GetAllMyPirates();
             int HowManyPirates = ListPirate.Count - 1;
-            int piratesAlreadeSend = 0;// 0
-            const int numStrategy = 3;//number of strategy consot
-            int piratestosend = 0;//it will consist- untill which part of the list of pirate to sent  
+            int piratesAlreadeSend = 0; // 0
+            const int numStrategy = 3; //number of strategy consot
+            int piratestosend = 0; //it will consist- untill which part of the list of pirate to sent  
             //we will be send from piratespiratesAlreadeSend to piratestosend for each strategy
+
             for (int i = 1; i <= numStrategy; i++)
             {
                 piratesAlreadeSend = piratestosend ;
-                piratestosend = piratestosend + UpdateNum(i, HowManyPirates, piratesAlreadeSend);
-                SendToStrategy(i, ListPirate, piratesAlreadeSend, piratestosend);
+                piratestosend = piratestosend + UpdateNum (i, HowManyPirates, piratesAlreadeSend);
+                SendToStrategy (i, ListPirate, piratesAlreadeSend, piratestosend);
             }
+
             CheckLeftAndSend(piratestosend, HowManyPirates, ListPirate);
         }
-        private int UpdateNum(int numStrategy, int HowManyPirates, int sumpiratesAlreadeSend)
+
+        private int UpdateNum (int numStrategy, int HowManyPirates, int sumpiratesAlreadeSend)
         {
-            int precent = WhatPrecent(numStrategy);
-            return Math.Round(HowManyPirates * precent);
+            int precent = WhatPrecent (numStrategy);
+            return Math.Round (HowManyPirates * precent);
         }
 
         private void CheckLeftAndSend(int numSent, int HowManyPirates, List<Pirate> ListPirate)
         {
-            numStrategyToSend = 3;//example
+            numStrategyToSend = 3; //example
             if (numSent < HowManyPirates)
-                SendToStrategy(numStrategyToSend, ListPirate, numSent, HowManyPirates);
+            {
+                SendToStrategy (numStrategyToSend, ListPirate, numSent, HowManyPirates);
+            }
         }
 
         private double WhatPrecent(int numStrategy)
         {
-
             if (numStrategy == 1)
                 return 0.4;
             else if (numStrategy == 2)
@@ -60,89 +59,92 @@ namespace MyBot
             else
                 return 0.4;
         }
-        private void SendToStrategy(int numStrategyToSend, List<Pirate> ListPirate,int from,int untill)
-            {
 
+        private void SendToStrategy (int numStrategyToSend, List<Pirate> ListPirate, int from, int untill)
+        {
             if (numStrategyToSend == 1)
-                Strategy1(ListPirate,  from,  untill);//first strategy
+                Strategy1 (ListPirate,  from,  untill); //first strategy
             else if (numStrategyToSend == 2)
-                Strategy2(ListPirate,  from,  untill);//secend strategy
+                Strategy2 (ListPirate,  from,  untill); //secend strategy
             else
-                Strategy3(ListPirate,  from, untill);//third strategy
+                Strategy3 (ListPirate,  from, untill); //third strategy
         }
 //____________________________________________________________________________________________________________
-//_________________________________________________________________________________________________________________
-        }
-        private void SailToDestination(Location destination, Pirate pirate, PirateGame game) // Maybe Later We Will Change Island To MapObject
+//____________________________________________________________________________________________________________
+
+        private void SailToDestination (Location destination, Pirate pirate, PirateGame game) // Maybe Later We Will Change Island To MapObject
         {
-            List<Location> sailOptions = game.GetSailOptions(pirate, destination);
+            List<Location> sailOptions = game.GetSailOptions (pirate, destination);
             // Set sail!
             game.SetSail(pirate, sailOptions[0]);
             // Print a message
             game.Debug("pirate " + pirate + " sails to " + sailOptions[0]);
         }
 
-    private void Strategy1(List<Pirate> ListPirate, int from, int untill)
-    {//this fanc need to decide which destination
-        Island destination = game.GetAllIslands()[3];
+        private void Strategy1(List<Pirate> ListPirate, int from, int untill)
+        { 
+            //this fanc need to decide which destination
+            Island destination = game.GetAllIslands()[3];
 
-        for (int i = from; i < untill; i++)
-        {
-            Pirate pirate = ListPirate[i];
-            if (!IsMyIsland(destination, game)) // Check If The Island That We Want To Go Is Not Ours
+            for (int i = from; i < untill; i++)
             {
-                SailToDestination(destination.Location, pirate);
-            }
-            else
-            {
-                if (pirate.GetLocation().Distance(new Location(24, 19)) != 0)
+                Pirate pirate = ListPirate[i];
+
+                if (!IsMyIsland(destination, game)) // Check If The Island That We Want To Go Is Not Ours
                 {
-                    Location destination1 = new Location(24, 19);
-                    SailToDestination(destination1, pirate, game);
+                    SailToDestination(destination.Location, pirate);
                 }
 
                 else
                 {
-                    if (pirate.GetLocation().Distance(new Location(24, 26)) != 0)
+                    if (pirate.GetLocation().Distance(new Location(24, 19)) != 0)
                     {
-                        Location destination2 = new Location(24, 26);
-                        SailToDestination(destination2, pirate, game);
+                        Location destination1 = new Location(24, 19);
+                        SailToDestination(destination1, pirate, game);
                     }
-                }
-            }
-        }
-    }
-        private void HandlePirates2_3(PirateGame game)
-        {
-            // Go over all of my pirates
-            for (int i = 2; i < 4; i++)
-            {
-                Pirate pirate = game.GetAllMyPirates()[i];
-                if (pirate.IsAlive())
-                {
-                    if (!TryAttack(pirate, game))
-                    {
 
-                        // Get the first island
-                        Island destination = WhichIsland(1, game);
-                        if (destination == null)
+                    else
+                    {
+                        if (pirate.GetLocation().Distance(new Location(24, 26)) != 0)
                         {
-                            Location destination1 = new Location(14, 23);
-                            List<Location> sailOptions1 = game.GetSailOptions(pirate, destination1);
-                            game.SetSail(pirate, sailOptions1[0]);
-                        }
-                        else
-                        {
-                            // Get sail options
-                            List<Location> sailOptions = game.GetSailOptions(pirate, destination);
-                            // Set sail!
-                            game.SetSail(pirate, sailOptions[0]);
-                            // Print a message
+                            Location destination2 = new Location(24, 26);
+                            SailToDestination(destination2, pirate, game);
                         }
                     }
                 }
             }
         }
+            private void HandlePirates2_3(PirateGame game)
+            {
+                // Go over all of my pirates
+                for (int i = 2; i < 4; i++)
+                {
+                    Pirate pirate = game.GetAllMyPirates()[i];
+                    if (pirate.IsAlive())
+                    {
+                        if (!TryAttack(pirate, game))
+                        {
+                            // Get the first island
+                            Island destination = WhichIsland(1, game);
+
+                            if (destination == null)
+                            {
+                                Location destination1 = new Location(14, 23);
+                                List<Location> sailOptions1 = game.GetSailOptions(pirate, destination1);
+                                game.SetSail(pirate, sailOptions1[0]);
+                            }
+                            else
+                            {
+                                // Get sail options
+                                List<Location> sailOptions = game.GetSailOptions(pirate, destination);
+                                // Set sail!
+                                game.SetSail(pirate, sailOptions[0]);
+                                // Print a message
+                            }
+                        }
+                    }
+                }
+            }
 
         //private void HandlePirates3(PirateGame game)
         //{
@@ -168,6 +170,7 @@ namespace MyBot
                 if (!TryAttack(pirate, game))
                 {
                     List<Drone> alled = game.GetEnemyLivingDrones();
+
                     if (alled.Count > 0)
                     {
                         if (alled[0].GetLocation().Col == game.GetEnemyCities()[0].GetLocation().Col)
@@ -177,6 +180,7 @@ namespace MyBot
                             game.SetSail(pirate, sailOptions[0]);
                         }
                     }
+
                     else
                     {
                         Location destination = new Location(24, 34);
@@ -206,18 +210,22 @@ namespace MyBot
             List<Island> isla = game.GetNeutralIslands();
             if (isla.Count > 0)
                 return isla[0];
+
             List<Island> isla1 = game.GetEnemyIslands();
+
             for (int i = 0; i < isla1.Count; i++)
             {
                 Island isa = isla1[i];
                 List<Pirate> pi = game.GetEnemyLivingPirates();
                 int mone = 0;
+
                 for (int k = 0; k < pi.Count; k++)
                 {
                     if (pi[k].Distance(isa) < 2)
                         mone++;
 
                 }
+
                 if (mone <= howManyShip)
                     return isa;
             }
@@ -230,7 +238,6 @@ namespace MyBot
             // Go over all of my drones
             foreach (Drone drone in game.GetMyLivingDrones())
             {
-
                 // Get my first city
                 City destination = game.GetMyCities()[0];
                 // Get sail options
