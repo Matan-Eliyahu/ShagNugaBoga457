@@ -2,289 +2,486 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Pirates;
 
 namespace MyBot
 {
-    public class MyBot : Pirates.IPirateBot
+    enum Task { DefenceEnemyIsland, DefenceHomeIsland, Attack, Runner };
+    public class MyBot : IPirateBot
     {
+        public static PirateGame game; // good.
+        private static List<Pirates> ourPirates = new List<Pirates>();
+
         public void DoTurn(PirateGame game)
         {
-            HandlePirates(game);
-
-            HandleDrones(game);
-        }
-
-        private void HandlePirates(PirateGame game)
-        {
-            List<Pirate> ListPirate = game.GetAllMyPirates();
-            int HowManyPirates = ListPirate.Count - 1;
-            int piratesAlreadeSend = 0; // 0
-            const int numStrategy = 3; //number of strategy consot
-            int piratestosend = 0; //it will consist- untill which part of the list of pirate to sent  
-            //we will be send from piratespiratesAlreadeSend to piratestosend for each strategy
-
-            for (int i = 1; i <= numStrategy; i++)
+            MyBot.game = game;
+            List<Task> tasks = Predict.GetTasks();
+            if (game.GetTurn() == 1)
             {
-                piratesAlreadeSend = piratestosend;
-                piratestosend = piratestosend + UpdateNum(i, HowManyPirates, piratesAlreadeSend);
-                SendToStrategy(i, ListPirate, piratesAlreadeSend, piratestosend, game);
-            }
-
-            CheckLeftAndSend(piratestosend, HowManyPirates, ListPirate, game);
-        }
-
-        private int UpdateNum(int numStrategy, int HowManyPirates, int sumpiratesAlreadeSend)
-        {
-            double precent = WhatPrecent(numStrategy);
-            return (int)Math.Round(HowManyPirates * precent);
-        }
-
-        private void CheckLeftAndSend(int numSent, int HowManyPirates, List<Pirate> ListPirate, PirateGame game)
-        {
-            int numStrategyToSend = 3; //example
-            if (numSent < HowManyPirates)
-            {
-                SendToStrategy(numStrategyToSend, ListPirate, numSent, HowManyPirates, game);
-            }
-        }
-
-        private double WhatPrecent(int numStrategy)
-        {
-            if (numStrategy == 1)
-                return 0.4;
-            else if (numStrategy == 2)
-                return 0.2;
-            else
-                return 0.4;
-        }
-
-        private void SendToStrategy(int numStrategyToSend, List<Pirate> ListPirate, int from, int untill, PirateGame game)
-        {
-            if (numStrategyToSend == 1)
-                Strategy1(ListPirate, from, untill, game); //first strategy
-            else if (numStrategyToSend == 2)
-                Strategy2(ListPirate, from, untill, game); //secend strategy
-            else
-                Strategy3(ListPirate, from, untill, game); //third strategy
-        }
-        //____________________________________________________________________________________________________________
-        //____________________________________________________________________________________________________________
-
-        private void SailToDestination(Location destination, Pirate pirate, PirateGame game) // Maybe Later We Will Change Island To MapObject
-        {
-            if (pirate.GetLocation().Distance(destination) != 0)
-            {
-                List<Location> sailOptions = game.GetSailOptions(pirate, destination);
-                // Set sail!
-                game.SetSail(pirate, sailOptions[0]);
-                // Print a message
-                game.Debug("pirate " + pirate + " sails to " + sailOptions[0]);
-            }
-        }
-
-        private void Strategy1(List<Pirate> ListPirate, int from, int untill, PirateGame game)
-        {
-            //this fanc need to decide which destination
-            Island destination = game.GetAllIslands()[3];
-            int mone = 0;
-            for (int i = from; i < untill; i++)
-            {
-                Pirate pirate = ListPirate[i];
-                if (pirate.IsAlive() && !TryAttack(pirate, game))
+                int mone = 0;
+                foreach (Pirate pirate in game.GetAllMyPirates())
                 {
-                    if (!IsMyIsland(destination, game)) // Check If The Island That We Want To Go Is Not Ours
-                    {
-                        SailToDestination(destination.Location, pirate, game);
-                    }
-
-                    else
-                    {
-                        Location destination2 = ProtectLocation(mone, game);
-                        SailToDestination(destination2, pirate, game);
-                    }
-                }
-                mone++;
-            }
-        }
-
-        private Location ProtectLocation(int mone, PirateGame game)
-        {
-            Location owenerCity = game.GetMyCities()[0].Location;
-            Location enemyCity = game.GetEnemyCities()[0].Location;
-            int row = owenerCity.Row;
-            int col;
-            if (mone % 2 == 0)
-                col = (owenerCity.Col * 2 + enemyCity.Col * 1) / 3;
-            else
-                col = (owenerCity.Col * 1 + enemyCity.Col * 2) / 3;
-            return new Location(row, col);
-        }
-
-        private void Strategy3(List<Pirate> ListPirate, int from, int untill, PirateGame game)
-        {
-            // Go over all of my pirates
-            for (int i = from; i < untill; i++)
-            {
-                Pirate pirate = ListPirate[i];
-                if (pirate.IsAlive() && !TryAttack(pirate, game))
-                {
-                    // Get the first island
-                    Island destination = WhichIsland(1, game);
-
-                    if (destination == null)
-                    {
-                        Location destination1 = new Location(14, 23);
-                        List<Location> sailOptions1 = game.GetSailOptions(pirate, destination1);
-                        game.SetSail(pirate, sailOptions1[0]);
-                    }
-                    else
-                    {
-                        // Get sail options
-                        List<Location> sailOptions = game.GetSailOptions(pirate, destination);
-                        // Set sail!
-                        game.SetSail(pirate, sailOptions[0]);
-                        // Print a message
-                    }
+                    ourPirates.Add(new Pirates(pirate, tasks[mone % tasks.Count]));
+                    mone++;
                 }
             }
-        }
-
-
-
-        //private void HandlePirates3(PirateGame game)
-        //{
-        //    Pirate pirate = game.GetAllMyPirates()[3];
-
-        //    if (pirate.IsAlive())
-        //    {
-        //        if (!TryAttack(pirate, game))
-        //        {
-        //            Location destination = new Location(24, 11);
-        //            List<Location> sailOptions = game.GetSailOptions(pirate, destination);
-        //            game.SetSail(pirate, sailOptions[0]);
-        //        }
-        //    }
-        //}
-
-        private void Strategy2(List<Pirate> ListPirate, int from, int untill, PirateGame game)
-        {
-
-            for (int i = from; i < untill; i++)
+            for (int i = 0; i < game.GetAllMyPirates().Count; i++)
             {
-                Pirate pirate = ListPirate[i];
-
-                if (pirate.IsAlive() && !TryAttack(pirate, game))
-                {
-                    List<Drone> alled = game.GetEnemyLivingDrones();
-
-                    if (alled.Count > 0)
-                    {
-                        if (alled[0].GetLocation().Col == game.GetEnemyCities()[0].GetLocation().Col)
-                        {
-                            Location destination1 = new Location(22, 38);
-                            List<Location> sailOptions = game.GetSailOptions(pirate, destination1);
-                            game.SetSail(pirate, sailOptions[0]);
-                        }
-                    }
-
-                    else
-                    {
-                        Location destination = new Location(24, 34);
-                        List<Location> sailOptions = game.GetSailOptions(pirate, destination);
-                        game.SetSail(pirate, sailOptions[0]);
-                    }
-                }
+                ourPirates[i].Pirate = game.GetAllMyPirates()[i];
+                ourPirates[i].Act();
+            }
+            List<Drones>[] organizedDrones = new List<Drones>[game.GetAllIslands().Count];
+            for (int i = 0; i < organizedDrones.Length; i++)
+            {
+                organizedDrones[i] = new List<Drones>();
+            }
+            foreach (Drone drone in game.GetMyLivingDrones())
+            {
+                Add(drone, organizedDrones[Id(drone.InitialLocation)]);
             }
         }
 
-
-        private bool IsMyIsland(Island i1, PirateGame game)
+        private int Id(Location initialLocation)
         {
-            List<Island> listtest = game.GetMyIslands();
-            for (int i = 0; i < listtest.Count; i++)
+            foreach (Island island in game.GetAllIslands())
+                if (island.Location.Equals(initialLocation))
+                    return island.Id;
+            return 0;
+        }
+
+        private void Add(Drone drone, List<Drones> list)
+        {
+            if (list.Count == 0)
+                list.Add(new Drones(drone, drone.InitialLocation));
+            else
             {
-                if (i1 == listtest[i])
-                {
+                if (list[list.Count - 1].Act(drone) == 0)
+                    list.Add(new Drones(drone, drone.InitialLocation));
+            }
+        }
+    }
+
+    class Predict
+    {
+        public static List<Pirate> enemies = MyBot.game.GetAllEnemyPirates();
+
+        public static List<Task> GetTasks()
+        {
+            List<Task> tasks = new List<Task>();
+            tasks.Add(Task.Runner);
+            tasks.Add(Task.DefenceEnemyIsland);
+            tasks.Add(Task.DefenceHomeIsland);
+            tasks.Add(Task.Attack);
+            return tasks;
+        }
+
+        /// <summary>
+        /// Find if there is an enemy on our home.
+        /// </summary>
+        /// <returns>true if there is, flase if there isn't</returns>
+        public static bool EnemyHome()
+        {
+            List<Pirate> enemies = MyBot.game.GetEnemyLivingPirates();
+            City Home = MyBot.game.GetMyCities()[0];
+            foreach (Pirate enemy in enemies)
+                if (Home.InRange(enemy.Location, Home.UnloadRange))
                     return true;
-                }
-            }
-
             return false;
         }
 
-        private Island WhichIsland(int howManyShip, PirateGame game)
+        /// <summary>
+        /// For the pirate who goes to the enemy city to kill drones.
+        /// </summary>
+        /// <returns>The location he needs to go to</returns>
+        public static Location DefenceEnemy()
         {
-            List<Island> isla = game.GetNeutralIslands();
-            if (isla.Count > 0)
-                return isla[0];
+            City enemy = MyBot.game.GetEnemyCities()[0];
+            foreach (Drone drone in MyBot.game.GetEnemyLivingDrones())
+                if (enemy.InRange(drone, enemy.UnloadRange * 4))
+                    return drone.Location;
+            return enemy.Location;
+        }
 
-            List<Island> isla1 = game.GetEnemyIslands();
+        /// <summary>
+        /// Find out which target is the closest one to the location.
+        /// </summary>
+        /// <returns>the target.</returns>
+        public static GameObject GetClosestToLocation(List<GameObject> targets, Location location)
+        {
+            GameObject closest = targets[0];
 
-            for (int i = 0; i < isla1.Count; i++)
-            {
-                Island isa = isla1[i];
-                List<Pirate> pi = game.GetEnemyLivingPirates();
-                int mone = 0;
+            foreach (GameObject target in targets)
+                if (location.Distance(target) < location.Distance(closest))
+                    closest = target;
 
-                for (int k = 0; k < pi.Count; k++)
-                {
-                    if (pi[k].Distance(isa) < 2)
-                        mone++;
+            return closest;
+        }
 
-                }
+        /// <summary>
+        /// Find which island is the recommendable island.
+        /// </summary>
+        /// <param name="howManyShip">how meny runners we got avaible</param>
+        /// <param name="location">the pirate location</param>
+        /// <returns></returns>
+        public static GameObject WhichIsland(int howManyShip, Location location)
+        {
+            List<GameObject> targets = ConvertIslandsToGameObjectList(MyBot.game.GetNeutralIslands());
 
-                if (mone <= howManyShip)
-                    return isa;
-            }
+            if (targets.Count > 0)
+                return GetClosestToLocation(targets, location);
+
+            GameObject target = GetEnemyIslandMinPirates();
+
+            if (target == null)
+                return null;
+
+            if (GetEnemyPiratesNum(target.Location) <= howManyShip)
+                return target;
 
             return null;
         }
 
-        private void HandleDrones(PirateGame game)
+        /// <summary>
+        /// find out which enemy island has the smallest number of pirates.
+        /// </summary>
+        /// <returns>the island</returns>
+        public static Island GetEnemyIslandMinPirates()
         {
-            // Go over all of my drones
-            foreach (Drone drone in game.GetMyLivingDrones())
+            List<Island> islands = MyBot.game.GetEnemyIslands();
+            if (islands.Count == 0)
+                return null;
+            Island min = islands[0];
+            int minNum = GetEnemyPiratesNum(min.Location);
+
+            foreach (Island island in islands)
             {
-                // Get my first city
-                City destination = game.GetMyCities()[0];
-                // Get sail options
-                if (drone.GetLocation().Col == destination.GetLocation().Col)
+                int num = GetEnemyPiratesNum(island.Location);
+                if (num < minNum)
                 {
-                    List<Location> sailOptions = game.GetSailOptions(drone, destination);
-                    // Set sail!
-                    game.SetSail(drone, sailOptions[0]);
+                    min = island;
+                    minNum = num;
                 }
-                else
-                {
-                    Location destination1 = new Location(drone.GetLocation().Row, destination.GetLocation().Col);
-                    List<Location> sailOptions = game.GetSailOptions(drone, destination1);
-                    // Set sail!
-                    game.SetSail(drone, sailOptions[0]);
-                }
+            }
+
+            return min;
+        }
+
+        /// <summary>
+        /// Find who many enemy pirates are on that location.
+        /// </summary>
+        /// <param name="location">the location that is being checked.</param>
+        /// <returns>the number</returns>
+        public static int GetEnemyPiratesNum(Location location)
+        {
+            int mone = 0;
+
+            foreach (Pirate enemy in enemies)
+                if (enemy.IsAlive() && enemy.Distance(location) < 2)
+                    mone++;
+
+            return mone;
+        }
+
+        /// <summary>
+        /// converts an islands list to a GameObject list.
+        /// </summary>
+        /// <param name="islands">the islands list to be converted.</param>
+        /// <returns>the GameObject list</returns>
+        public static List<GameObject> ConvertIslandsToGameObjectList(List<Island> islands)
+        {
+            List<GameObject> list = new List<GameObject>();
+
+            foreach (Island island in islands)
+                list.Add(island);
+
+            return list;
+        }
+
+        /// <summary>
+        /// converts an aircraft list to a GameObject list.
+        /// </summary>
+        /// <param name="aircrafts">the aircraft list to be converted.</param>
+        /// <returns>the GameObject list</returns>
+        public static List<GameObject> ConvertAircraftsToGameObjectList(List<Aircraft> aircrafts)
+        {
+            List<GameObject> list = new List<GameObject>();
+
+            foreach (Aircraft aircraft in aircrafts)
+                list.Add(aircraft);
+
+            return list;
+        }
+
+        /// <summary>
+        /// converts a drones list to a GameObject list.
+        /// </summary>
+        /// <param name="drones">the drone list to be converted.</param>
+        /// <returns>the GameObject list</returns>
+        public static List<GameObject> ConvertDronesToGameObjectList(List<Drone> drones)
+        {
+            List<GameObject> list = new List<GameObject>();
+
+            foreach (Drone drone in drones)
+                list.Add(drone);
+
+            return list;
+        }
+
+        /// <summary>
+        /// Need to be smart.
+        /// </summary>
+        /// <returns>the number of drones in a group</returns>
+        public static int GetDronesGroupedNum(Location initialLocation, Location currentLocation)
+        {
+            if (!currentLocation.Equals(initialLocation))
+                return 1;
+            foreach (Pirate enemy in MyBot.game.GetEnemyLivingPirates())
+                if (initialLocation.InRange(enemy, enemy.MaxSpeed * 3))
+                    return 1;
+            int turns = MyBot.game.GetAllIslands()[Id(initialLocation)].TurnsToDroneCreation;
+            return 5 / turns + 2; // 5 devided by the number of turns to drone creation plus one.
+        }
+
+        private static int Id(Location initialLocation)
+        {
+            foreach (Island island in MyBot.game.GetAllIslands())
+                if (island.Location.Equals(initialLocation))
+                    return island.Id;
+            return 0;
+        }
+    }
+
+    class Pirates
+    {
+        public delegate void Action();
+        private Pirate pirate;
+        private Action action;
+        public static int runners = 0;
+        public static int defenceEnemy = 0;
+        public static int defenceHome = 0;
+        public static int attack = 0;
+
+        public Pirate Pirate { get { return pirate; } set { pirate = value; } }
+
+        /// <summary>
+        /// constructor, getting the pirate and his task.
+        /// </summary>
+        /// <param name="pirate">the pirate.</param>
+        /// <param name="task">his task</param>
+        public Pirates(Pirate pirate, Task task)
+        {
+            this.Pirate = pirate;
+            switch (task)
+            {
+                case Task.DefenceEnemyIsland:
+                    action = DefenceEnemy;
+                    defenceEnemy++;
+                    break;
+                case Task.Attack:
+                    action = Attack;
+                    attack++;
+                    break;
+                case Task.DefenceHomeIsland:
+                    action = DefenceHome;
+                    defenceHome++;
+                    break;
+                case Task.Runner:
+                    action = Runner;
+                    runners++;
+                    break;
             }
         }
 
-        public bool TryAttack(Pirate pirate, PirateGame game)
+        /// <summary>
+        /// Invoking the pirate action, if he is alive and didn't attack anyone.
+        /// </summary>
+        public void Act()
         {
-            // Go over all enemies
-            foreach (Aircraft enemy in game.GetEnemyLivingAircrafts())
+            if (Pirate.IsAlive())
+                if (!TryAttack())
+                    action.Invoke();
+        }
+
+        /// <summary>
+        /// Moves the pirate to our home if the opponent is there, otherwise calls Attack.
+        /// </summary>
+        private void DefenceHome()
+        {
+            if (Predict.EnemyHome())
+                MovePirate(MyBot.game.GetMyCities()[0].Location);
+            else
             {
-                // Check if the enemy is in attack range
-                if (pirate.InAttackRange(enemy))
+                if (MyBot.game.GetMyLivingDrones().Count != 0)
+                    ProtectDrones();  // may be changed.
+                else
+                    Runner();
+            }
+        }
+
+        private void ProtectDrones()
+        {
+            List<GameObject> targets = Predict.ConvertDronesToGameObjectList(MyBot.game.GetMyLivingDrones());
+            GameObject target = Predict.GetClosestToLocation(targets, Pirate.Location);
+            MovePirate(target.Location);
+        }
+
+        /// <summary>
+        /// Move the pirate that goes to the enemy cities and destroies drones.
+        /// </summary>
+        private void DefenceEnemy()
+        {
+            if (MyBot.game.GetEnemyIslands().Count == 0)
+            {
+                Attack();
+                return;
+            }
+            MovePirate(Predict.DefenceEnemy());
+        }
+
+        /// <summary>
+        /// Move the runners to the closest island to home, if the closest island isn't ours or he doesn't 
+        /// have another good option.
+        /// </summary>
+        private void Runner()
+        {
+            List<GameObject> islands = Predict.ConvertIslandsToGameObjectList(MyBot.game.GetAllIslands());
+            GameObject closest = Predict.GetClosestToLocation(islands, Pirate.Location);
+            int numClosest = Predict.GetEnemyPiratesNum(closest.Location);
+
+            if (!closest.Owner.Equals(MyBot.game.GetMyself()) && numClosest <= runners)
+            {
+                MovePirate(closest.GetLocation());
+                return;
+            }
+
+            GameObject island = Predict.WhichIsland(runners, Pirate.Location);
+            if (island == null)
+            {
+                if (numClosest > runners)
                 {
-                    // Fire!
-                    game.Attack(pirate, enemy);
-                    // Print a message
-                    game.Debug("pirate " + pirate + " attacks " + enemy);
-                    // Did attack
+                    Attack(); // May be changed.
+                    return;
+                }
+                MovePirate(closest.GetLocation());
+                return;
+            }
+            MovePirate(island.Location);
+        }
+
+        private void Attack()
+        {
+            if (attack > 1)
+            {
+                // DoubleAttack();
+                // return;
+            }
+            List<GameObject> targets = Predict.ConvertAircraftsToGameObjectList(MyBot.game.GetEnemyLivingAircrafts());
+            GameObject target = Predict.GetClosestToLocation(targets, Pirate.Location);
+            MovePirate(target.Location);
+        }
+
+        private void DoubleAttack()
+        {
+
+        }
+
+        /// <summary>
+        /// moving the pirate to the destination if he isn't there.
+        /// </summary>
+        /// <param name="destination">the location we want to send the pirate to</param>
+        private void MovePirate(Location destination)
+        {
+            if (!Pirate.GetLocation().Equals(destination))
+            {
+                List<Location> sailOptions = MyBot.game.GetSailOptions(Pirate, destination);
+                MyBot.game.SetSail(Pirate, sailOptions[0]);
+                MyBot.game.Debug("pirate " + Pirate + " sails to " + sailOptions[0]);
+            }
+        }
+
+        /// <summary>
+        /// tries to attack enemy aircraft.
+        /// </summary>
+        /// <returns>true if he attacked, false otherwise</returns>
+        public bool TryAttack()
+        {
+            foreach (Aircraft enemy in MyBot.game.GetEnemyLivingAircrafts())
+            {
+                if (Pirate.InAttackRange(enemy))
+                {
+                    MyBot.game.Attack(Pirate, enemy);
+                    MyBot.game.Debug("pirate " + Pirate + " attacks " + enemy);
                     return true;
                 }
             }
-
-            // Didnt attack
             return false;
+        }
 
+    }
+
+    class Drones
+    {
+        private List<Drone> drones;
+        private Location creationIsland;
+        private int dronesNum;
+
+        public Drones(Drone drone, Location creationIsland)
+        {
+            this.drones = new List<Drone>();
+            drones.Add(drone);
+            this.creationIsland = creationIsland;
+            dronesNum = Predict.GetDronesGroupedNum(creationIsland, drone.Location);
+        }
+
+        public int Act(Drone drone)
+        {
+            if (IsIn(drone))
+                return -1;
+            if (drones.Count == dronesNum)
+            {
+                Move();
+                return 0;
+            }
+            if (Add(drone))
+                return 1;
+            return 0;
+        }
+
+        public bool IsIn(Drone drone)
+        {
+            foreach (Drone d in drones)
+                if (d == drone)
+                    return true;
+            return false;
+        }
+
+        public bool Add(Drone drone)
+        {
+            if (!drone.InitialLocation.Equals(creationIsland.GetLocation()))
+                return false;
+            drones.Add(drone);
+            return true;
+        }
+
+        public void Move()
+        {
+            foreach (Drone drone in drones)
+                MoveDrone(drone, MyBot.game.GetMyCities()[0].Location);
+        }
+
+        /// <summary>
+        /// moving the drone to the destination if he isn't there.
+        /// </summary>
+        /// <param name="destination">the location we want to send the drone to</param>
+        private void MoveDrone(Drone drone, Location destination)
+        {
+            if (!drone.GetLocation().Equals(destination))
+            {
+                List<Location> sailOptions = MyBot.game.GetSailOptions(drone, destination);
+                MyBot.game.SetSail(drone, sailOptions[0]);
+                MyBot.game.Debug("pirate " + drone + " sails to " + sailOptions[0]);
+            }
         }
     }
 }
